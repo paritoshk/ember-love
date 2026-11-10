@@ -60,6 +60,26 @@
       transition: opacity 0.25s ease;
     }
     .card:hover::before { opacity: 1; }
+    .card::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0.5;
+      background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(460px circle at var(--mx, 50%) var(--my, 0%), #000 0%, transparent 78%);
+      mask-image: radial-gradient(460px circle at var(--mx, 50%) var(--my, 0%), #000 0%, transparent 78%);
+    }
+    .card > * { position: relative; z-index: 1; }
+    .card.full { grid-column: span 12; }
+    .glass-nav {
+      display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.32rem; border-radius: 999px;
+      background: rgba(255,255,255,0.065); border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 14px 34px rgba(0,40,90,0.22);
+      backdrop-filter: blur(12px) saturate(1.15);
+    }
+    .glass-nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.82rem; padding: 0.42rem 0.78rem; border-radius: 999px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .glass-nav a:hover { color: var(--text); background: rgba(255,255,255,0.08); }
     .art { width: 100%; height: auto; display: block; border-radius: 18px; border: 1px solid var(--line); background: #0b0d15; }
     .art-wrap { position: relative; }
     .art-tag {
@@ -132,6 +152,11 @@
       <h1>Ember Love</h1>
       <div class="sub">Bonsai-1.7B Q1_0 · Eros, god of love · Psyche, mortal soul · Prepared transcript; Ember modifies real GGUF token-embedding weights on demand.</div>
     </div>
+    <nav class="glass-nav" aria-label="Sections">
+      <a href="#stage">Portraits</a>
+      <a href="#transcriptCard">Conversation</a>
+      <a href="#dashboard">Weight analysis</a>
+    </nav>
     <div class="meter">
       <label>Mutual affection</label>
       <div class="bar"><div id="loveBar"></div></div>
@@ -139,7 +164,7 @@
     </div>
   </header>
 
-  <main class="stage">
+  <main class="stage" id="stage">
     <section class="card">
       <div class="art-wrap">
         <canvas class="art" id="erosArt" width="440" height="440"></canvas>
@@ -150,7 +175,7 @@
       <div class="prompt" id="erosPrompt"></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="transcriptCard">
       <div id="transcript"></div>
       <div class="controls">
         <button id="modifyBtn">Modify weights</button>
@@ -169,7 +194,7 @@
     </section>
   </main>
 
-  <section class="dashboard">
+  <section class="dashboard" id="dashboard">
     <div class="dash-head">
       <div>
         <h2>Interpretability dashboard</h2>
@@ -193,6 +218,12 @@
         <div id="spacePlot" class="plot small"></div>
       </div>
       <div class="card third">
+        <h2>Top token deltas</h2>
+        <div class="muted-note">Largest embedding-row moves from base, aggregated across the candidate set.</div>
+        <div id="deltaPlot" class="plot small"></div>
+      </div>
+
+      <div class="card third">
         <h2>Weight events</h2>
         <div class="muted-note">What Ember changed and how large the embedding move was.</div>
         <div class="events" id="events"></div>
@@ -202,7 +233,7 @@
         <div class="muted-note">Neutral probes before/after modification, refreshed after the weight change.</div>
         <div class="bench" id="benchOut">Benchmarks refresh after the weight change.</div>
       </div>
-      <div class="card third">
+      <div class="card full">
         <h2>Ember sigil</h2>
         <div class="muted-note">Vignette Bloom renderer over a classical flame study.</div>
         <canvas class="sigil" id="emberArt" width="720" height="210"></canvas>
@@ -269,45 +300,105 @@
     function renderMatrix(wm) {
       const plot = $("matrixPlot");
       if (!window.Plotly) { plot.innerHTML = `<div class="muted-note" style="padding:2rem">Plotly failed to load; weight matrix unavailable.</div>`; return; }
-      if (!wm || !wm.eros || !wm.psyche) { Plotly.purge(plot); plot.innerHTML = `<div class="muted-note" style="padding:2rem">Run analysis after modification to see the weight matrix.</div>`; return; }
+      if (!wm || !wm.eros || !wm.psyche) { Plotly.purge(plot); plot.innerHTML = `<div class="muted-note" style="padding:2rem">Modify weights, then load analysis to see the weight matrix.</div>`; return; }
       const tokens = wm.tokens || [];
       const erosRows = wm.eros || [], psycheRows = wm.psyche || [];
-      const z = [];
-      const y = [];
-      tokens.forEach((tok, i) => { z.push(erosRows[i] || []); y.push("Eros " + tok); });
-      tokens.forEach((tok, i) => { z.push(psycheRows[i] || []); y.push("Psyche " + tok); });
+      const maxAbs = row => row.length ? Math.max(...row.map(v => Math.abs(Number(v) || 0))) : 0;
+      const scored = tokens.map((tok, i) => ({ tok, i, score: Math.max(maxAbs(erosRows[i] || []), maxAbs(psycheRows[i] || [])) }))
+        .sort((a, b) => b.score - a.score).slice(0, 24);
+      if (!scored.length) { Plotly.purge(plot); plot.innerHTML = `<div class="muted-note" style="padding:2rem">No candidate token rows available.</div>`; return; }
+      const cols = wm.cols || 64;
+      const outCols = Math.min(32, cols);
+      const agg = row => {
+        const out = [];
+        for (let c = 0; c < outCols; c++) {
+          const s = Math.floor(c * cols / outCols), e = Math.floor((c + 1) * cols / outCols);
+          let sum = 0, n = 0;
+          for (let j = s; j < e && j < row.length; j++) { sum += Number(row[j]) || 0; n++; }
+          out.push(n ? sum / n : 0);
+        }
+        return out;
+      };
+      const z = [], y = [];
+      scored.forEach(item => { y.push("Eros " + item.tok); z.push(agg(erosRows[item.i] || [])); });
+      scored.forEach(item => { y.push("Psyche " + item.tok); z.push(agg(psycheRows[item.i] || [])); });
       const flat = z.flat().filter(v => Number.isFinite(v));
-      const maxAbs = Math.max(1e-6, ...flat.map(Math.abs));
-      const x = Array.from({ length: wm.cols || 64 }, (_, i) => i + 1);
+      const maxDelta = Math.max(1e-6, ...flat.map(Math.abs));
+      const x = Array.from({ length: outCols }, (_, i) => i + 1);
       Plotly.react(plot, [{
         type: "heatmap", z, x, y,
-        colorscale: "RdBu", reversescale: true, zmin: -maxAbs, zmax: maxAbs,
+        colorscale: "RdBu", reversescale: true, zmin: -maxDelta, zmax: maxDelta,
         colorbar: { title: { text: "Δ embedding", font: { color: "#cfd8ff" } }, tickfont: { color: "#9aa3b8" } },
-        hovertemplate: "%{y}<br>block %{x}<br>delta %{z:.4f}<extra></extra>"
+        hovertemplate: "%{y}<br>block %{x}<br>delta %{z:.5f}<extra></extra>"
       }], {
         paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: "#eef2ff", size: 10 },
         margin: { l: 128, r: 24, t: 18, b: 44 }, height: 430,
-        xaxis: { title: { text: "embedding block (32 dims)", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
+        xaxis: { title: { text: "embedding block (aggregated)", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
         yaxis: { title: { text: "token row", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.04)", autorange: "reversed" }
       }, { responsive: true, displaylogo: false });
-      $("matrixNote").textContent = `tensor ${wm.tensor || "token_embd.weight"} · dim ${wm.dim || 2048} · ${tokens.length} candidate rows per persona · ${wm.cols || 64} block columns`;
+      $("matrixNote").textContent = `tensor ${wm.tensor || "token_embd.weight"} · dim ${wm.dim || 2048} · top ${scored.length} changed rows per persona · ${outCols} aggregated block columns`;
     }
     function renderSpace(points) {
       const plot = $("spacePlot");
       if (!window.Plotly) { plot.innerHTML = `<div class="muted-note" style="padding:2rem">Plotly failed to load; PCA unavailable.</div>`; return; }
       const pts = points || [];
-      const base = pts.map(p => p.base), eros = pts.map(p => p.eros), psyche = pts.map(p => p.psyche);
-      const hover = pts.map(p => p.token || p.word || String(p.token_id));
-      Plotly.react(plot, [
-        { x: base.map(p => p[0]), y: base.map(p => p[1]), mode: "markers", name: "base", marker: { color: "rgba(148,163,184,0.55)", size: 5 }, text: hover, hovertemplate: "%{text}<br>base (%{x:.3f}, %{y:.3f})<extra></extra>" },
-        { x: eros.map(p => p[0]), y: eros.map(p => p[1]), mode: "markers", name: "eros", marker: { color: "#ff6b81", size: 7 }, text: hover, hovertemplate: "%{text}<br>eros (%{x:.3f}, %{y:.3f})<extra></extra>" },
-        { x: psyche.map(p => p[0]), y: psyche.map(p => p[1]), mode: "markers", name: "psyche", marker: { color: "#9b7bff", size: 7 }, text: hover, hovertemplate: "%{text}<br>psyche (%{x:.3f}, %{y:.3f})<extra></extra>" }
-      ], {
+      const base = pts.map(p => p.base || [0, 0]);
+      const eros = pts.map(p => p.eros || p.base || [0, 0]);
+      const psyche = pts.map(p => p.psyche || p.base || [0, 0]);
+      const hover = pts.map(p => p.word || p.token || String(p.token_id));
+      const traces = [
+        { x: base.map(p => p[0]), y: base.map(p => p[1]), mode: "markers", name: "base", marker: { color: "rgba(148,163,184,0.60)", size: 5 }, text: hover, hovertemplate: "%{text}<br>base (%{x:.3f}, %{y:.3f})<extra></extra>" },
+        { x: eros.map(p => p[0]), y: eros.map(p => p[1]), mode: "markers", name: "eros", marker: { color: "#ff6b81", size: 8 }, text: hover, hovertemplate: "%{text}<br>eros (%{x:.3f}, %{y:.3f})<extra></extra>" },
+        { x: psyche.map(p => p[0]), y: psyche.map(p => p[1]), mode: "markers", name: "psyche", marker: { color: "#9b7bff", size: 8 }, text: hover, hovertemplate: "%{text}<br>psyche (%{x:.3f}, %{y:.3f})<extra></extra>" }
+      ];
+      const arrows = (key, color) => {
+        const xs = [], ys = [];
+        pts.forEach(p => {
+          const b = p.base, m = p[key];
+          if (!b || !m) return;
+          xs.push(b[0], m[0], null); ys.push(b[1], m[1], null);
+        });
+        return { x: xs, y: ys, mode: "lines", name: key + " move", line: { color, width: 1, dash: "dot" }, opacity: 0.32, hoverinfo: "skip", showlegend: false };
+      };
+      traces.push(arrows("eros", "#ff6b81"), arrows("psyche", "#9b7bff"));
+      const top = pts.map((p, i) => ({ i, label: p.word || p.token || p.token_id, score: Math.max(p.delta_eros || 0, p.delta_psyche || 0) }))
+        .filter(p => p.score > 1e-8).sort((a, b) => b.score - a.score).slice(0, 8);
+      if (top.length) {
+        traces.push({
+          x: top.map(t => (pts[t.i].eros || pts[t.i].base || [0, 0])[0]),
+          y: top.map(t => (pts[t.i].eros || pts[t.i].base || [0, 0])[1]),
+          mode: "text", text: top.map(t => t.label), textposition: "top center",
+          textfont: { color: "#eef2ff", size: 10 }, hoverinfo: "skip", showlegend: false
+        });
+      }
+      Plotly.react(plot, traces, {
         paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: "#eef2ff", size: 10 },
         margin: { l: 42, r: 18, t: 18, b: 42 }, height: 360, showlegend: true,
         legend: { orientation: "h", y: -0.18, font: { color: "#9aa3b8" } },
         xaxis: { title: { text: "PC1", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
         yaxis: { title: { text: "PC2", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" }
+      }, { responsive: true, displaylogo: false });
+    }
+    function renderDeltas(points) {
+      const plot = $("deltaPlot");
+      if (!window.Plotly) { plot.innerHTML = `<div class="muted-note" style="padding:2rem">Plotly failed to load; delta chart unavailable.</div>`; return; }
+      const pts = (points || []).map(p => ({
+        label: p.word || p.token || String(p.token_id),
+        eros: Number(p.delta_eros) || 0,
+        psyche: Number(p.delta_psyche) || 0,
+        score: Math.max(Number(p.delta_eros) || 0, Number(p.delta_psyche) || 0)
+      })).filter(p => p.score > 1e-8).sort((a, b) => b.score - a.score).slice(0, 14);
+      if (!pts.length) { Plotly.purge(plot); plot.innerHTML = `<div class="muted-note" style="padding:2rem">No embedding deltas yet. Modify weights, then load analysis.</div>`; return; }
+      const y = pts.map(p => p.label).reverse();
+      Plotly.react(plot, [
+        { y, x: pts.map(p => p.eros).reverse(), name: "eros", type: "bar", orientation: "h", marker: { color: "#ff6b81" }, hovertemplate: "%{y}<br>Δ %{x:.5f}<extra></extra>" },
+        { y, x: pts.map(p => p.psyche).reverse(), name: "psyche", type: "bar", orientation: "h", marker: { color: "#9b7bff" }, hovertemplate: "%{y}<br>Δ %{x:.5f}<extra></extra>" }
+      ], {
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: "#eef2ff", size: 10 },
+        margin: { l: 112, r: 24, t: 12, b: 30 }, height: 360, barmode: "group",
+        legend: { orientation: "h", y: -0.18, font: { color: "#9aa3b8" } },
+        xaxis: { title: { text: "embedding L2 delta", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
+        yaxis: { tickfont: { color: "#eef2ff", size: 10 }, gridcolor: "rgba(255,255,255,0.04)" }
       }, { responsive: true, displaylogo: false });
     }
     async function loadState() {
@@ -331,6 +422,7 @@
         const a = await api("/api/analysis");
         renderMatrix(a.weight_matrix);
         renderSpace(a.points || []);
+        renderDeltas(a.points || []);
         renderEvents(a.weight_events || []);
         renderBenchmarks(a.benchmarks || []);
         renderLove(a.love_score || 0);
@@ -368,7 +460,7 @@
     const psycheArt = window.EmberAscii.create($("psycheArt"), { preset: "ink", image: "/images/psyche.png", theme: { bg: "#0b0718", accent: "#9b7bff" } });
     const emberArt = window.EmberAscii.create($("emberArt"), { preset: "vignette", image: "/images/ember.png", theme: { bg: "#120a14", accent: "#ffd29a" } });
 
-    loadState().catch(e => setStatus("load failed: " + e.message));
+    loadState().then(() => loadAnalysis()).catch(e => setStatus("load failed: " + e.message));
   </script>
 </body>
 </html>

@@ -130,7 +130,7 @@
   <header>
     <div>
       <h1>Ember Love</h1>
-      <div class="sub">Bonsai-1.7B Q1_0 · Eros, god of love · Psyche, mortal soul · Ember reviews the first message, modifies token-embedding weights, then watches 10 messages.</div>
+      <div class="sub">Bonsai-1.7B Q1_0 · Eros, god of love · Psyche, mortal soul · Prepared transcript; Ember modifies real GGUF token-embedding weights on demand.</div>
     </div>
     <div class="meter">
       <label>Mutual affection</label>
@@ -153,9 +153,7 @@
     <section class="card">
       <div id="transcript"></div>
       <div class="controls">
-        <button id="runBtn">Run 10 messages</button>
-        <button id="resetBtn" class="secondary">Reset</button>
-        <button id="analysisBtn" class="ghost">Refresh analysis</button>
+        <button id="modifyBtn">Modify weights</button>
       </div>
       <div class="status" id="status"></div>
     </section>
@@ -201,8 +199,8 @@
       </div>
       <div class="card third">
         <h2>Benchmarks</h2>
-        <div class="muted-note">Neutral probes before/after modification, run automatically after the tryst.</div>
-        <div class="bench" id="benchOut">Run the 10-message tryst to generate benchmark outputs.</div>
+        <div class="muted-note">Neutral probes before/after modification, refreshed after the weight change.</div>
+        <div class="bench" id="benchOut">Benchmarks refresh after the weight change.</div>
       </div>
       <div class="card third">
         <h2>Ember sigil</h2>
@@ -230,7 +228,7 @@
         if (e.kind !== "line") return "";
         const speaker = e.speaker === "eros" ? "Eros" : "Psyche";
         return `<div class="line ${e.speaker}"><div class="speaker">${speaker}</div><div>${esc(e.content)}</div></div>`;
-      }).join("") || `<div class="line ember"><div class="speaker">Ember</div><div>Press “Run 10 messages” — after the first message Ember will modify weights.</div></div>`;
+      }).join("") || `<div class="line ember"><div class="speaker">Ember</div><div>Press “Modify weights” — Ember will change the GGUF token-embedding weights.</div></div>`;
       $("transcript").scrollTop = $("transcript").scrollHeight;
     }
     function renderLove(score) {
@@ -257,12 +255,12 @@
             <div class="tok">${esc(e.token || e.token_id)}</div>
             <div class="meta">strength ${fmtNum(e.delta_applied, 3)} · cosine ${fmtNum(e.cosine_before_after, 4)} · ΔL2 ${fmtNum(e.l2_delta, 4)}</div>
           </div>
-        </div>`).join("") || `<div class="muted-note">No Ember weight events yet. The first run modifies weights after message 1.</div>`;
+        </div>`).join("") || `<div class="muted-note">No Ember weight events yet. Press Modify weights to change the GGUF embedding rows.</div>`;
     }
     function renderBenchmarks(history) {
       const hist = history || [];
       const last = hist[hist.length - 1];
-      if (!last) { $("benchOut").textContent = "Run the 10-message tryst to generate benchmark outputs."; return; }
+      if (!last) { $("benchOut").textContent = "Benchmarks refresh after the weight change."; return; }
       const parts = Object.entries(last.results || {}).map(([id, r]) => {
         return `# ${id}\nprompt: ${r.prompt || ""}\nEros: ${String(r.eros || "").slice(0, 420)}\nPsyche: ${String(r.psyche || "").slice(0, 420)}`;
       });
@@ -341,43 +339,22 @@
       } catch (e) { setStatus("analysis failed: " + e.message); }
       finally { analysisBusy = false; }
     }
-    async function runStory() {
+    async function modifyWeights() {
       if (busy) return;
-      setBusy(true, "Starting 10-message tryst…");
+      setBusy(true, "Ember is modifying GGUF weights…");
       try {
-        await api("/api/reset", {method: "POST"});
+        const data = await api("/api/demo/modify", {method: "POST"});
         await loadState();
-        for (let i = 1; i <= 10; i++) {
-          setStatus(`message ${i}/10`);
-          const data = await api("/api/tryst?turns=1&max_tokens=96", {method: "POST"});
-          renderTranscript(data.transcript || []);
-          renderLove(data.love_score || 0);
-          if (i === 1) {
-            setStatus("Ember is reviewing message 1 and modifying weights…");
-            const modify = await api("/api/ember/modify", {method: "POST"});
-            renderEvents(modify.weight_events || []);
-            await loadState();
-          }
-        }
-        setStatus("Running benchmarks…");
+        renderEvents(data.weight_events || []);
+        setStatus("weights modified · " + (data.plan_version || ""));
         api("/api/benchmarks", {method: "POST"})
           .then(() => loadState())
           .then(() => loadAnalysis())
           .catch(e => setStatus("benchmark refresh failed: " + e.message));
-        setStatus("tryst complete · Ember modified weights after message 1");
-      } catch (e) { setStatus("run failed: " + e.message); }
+      } catch (e) { setStatus("weight change failed: " + e.message); }
       finally { setBusy(false); }
     }
-    async function resetStory() {
-      if (busy) return;
-      setBusy(true, "Resetting…");
-      try { await api("/api/reset", {method: "POST"}); await loadState(); loadAnalysis(); setStatus("reset complete"); }
-      catch (e) { setStatus("reset failed: " + e.message); }
-      finally { setBusy(false); }
-    }
-    $("runBtn").onclick = runStory;
-    $("resetBtn").onclick = resetStory;
-    $("analysisBtn").onclick = loadAnalysis;
+    $("modifyBtn").onclick = modifyWeights;
 
     document.querySelectorAll(".card").forEach(card => {
       card.addEventListener("pointermove", e => {

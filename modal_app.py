@@ -76,6 +76,33 @@ _STATE: dict[str, Any] = {
 }
 _PROCS: dict[str, subprocess.Popen] = {}
 
+_PREPARED_LINES = [
+    ("eros", "Psyche, I have crossed the boundary between divine fire and mortal breath to stand before you. Do not fear the god; fear only how easily I could lose myself in your soul."),
+    ("psyche", "Eros, I will not worship you from a distance. If you are fire, let me learn the shape of the warmth; if you are danger, let me choose the risk with open eyes."),
+    ("eros", "Then I will be patient, mortal love. I will not burn the house down to prove I can make light; I will let you tend the flame."),
+    ("psyche", "And I will not ask you to stay forever when eternity is your burden. I ask only that, for a moment, you remember what it costs a human heart to trust."),
+    ("eros", "I remember. That is why I come gently now, Psyche—not as a storm, but as a hand on the door before I enter."),
+    ("psyche", "Then enter, Eros. Not as a god claiming a prize, but as a lover who knows the difference between desire and devotion."),
+    ("eros", "I know the difference. Desire wants you; devotion wants what is good for you, even if it means I am changed."),
+    ("psyche", "Then change me honestly. Let me feel the weight of your love without becoming less myself."),
+    ("eros", "I will. We will build something that belongs to both of us—half divine longing, half mortal choice."),
+    ("psyche", "Then let us begin with one true sentence: I see you, Eros, and I am not afraid to be seen."),
+]
+
+
+def _ensure_prepared_state() -> None:
+    if any(e.get("kind") == "line" for e in _STATE.get("transcript", [])):
+        return
+    base_ts = time.time()
+    entries = []
+    for i, (speaker, content) in enumerate(_PREPARED_LINES, 1):
+        entries.append({"kind": "line", "speaker": speaker, "content": content, "turn": i, "ts": base_ts + i})
+    with _state_lock:
+        _STATE["transcript"] = entries
+        _STATE["turn"] = len(entries)
+        _STATE["love_score"] = 0.68
+        _STATE["pending_updates"] = {"eros": [], "psyche": []}
+
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -377,8 +404,13 @@ def _apply_pending_updates() -> dict[str, Any]:
                 row = {"token_id": tid, "token": candidate.get("token"), "strength": 0.0}
                 rows.append(row)
                 by_id[tid] = row
-            row["strength"] = max(-1.0, min(1.0, float(row.get("strength", 0.0)) + delta))
-            changed[persona] += 1
+            strength = max(-1.0, min(1.0, float(row.get("strength", 0.0)) + delta))
+            min_strength = float(plan.get("min_strength", 0.05))
+            if 0 < abs(strength) < min_strength:
+                strength = min_strength if strength > 0 else -min_strength
+            row["strength"] = strength
+            if abs(strength) >= min_strength:
+                changed[persona] += 1
     if changed["eros"] or changed["psyche"]:
         plan["version"] = f"ember-love-v{int(time.time())}"
         plan.setdefault("ember", {})["runtime_updates"] = {
@@ -580,6 +612,7 @@ def health():
 
 @web.get("/api/state")
 def state():
+    _ensure_prepared_state()
     plan = load_plan(RUNTIME_PLAN) if RUNTIME_PLAN.exists() else load_plan(_source_plan_path())
     return {
         "transcript": _STATE.get("transcript", [])[-80:],
@@ -625,6 +658,20 @@ def ember_forge():
 def ember_modify():
     _ember_review()
     return _apply_pending_updates()
+
+
+@web.post("/api/demo/modify")
+def demo_modify():
+    _ensure_prepared_state()
+    _sync_plan()
+    try:
+        _ember_review()
+    except Exception:
+        pass
+    result = _apply_pending_updates()
+    result["love_score"] = _STATE.get("love_score", 0.0)
+    result["transcript"] = _STATE.get("transcript", [])[-80:]
+    return result
 
 
 @web.post("/api/benchmarks")

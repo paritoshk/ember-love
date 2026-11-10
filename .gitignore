@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+ember_love/vocab.json
+ember_plan_raw.json

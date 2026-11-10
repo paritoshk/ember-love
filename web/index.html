@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ember Love — two tiny minds, changing weights</title>
+  <style>
+    :root {
+      --bg: #0b0710;
+      --panel: rgba(255, 255, 255, 0.06);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f7eef8;
+      --muted: #b9a8c4;
+      --eros: #ff6b81;
+      --psyche: #9b7bff;
+      --ember: #ffb36b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255, 107, 129, 0.22), transparent 32rem),
+        radial-gradient(circle at 80% 20%, rgba(155, 123, 255, 0.24), transparent 34rem),
+        linear-gradient(135deg, #120a1c, #070510 55%, #160a14);
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.25rem clamp(1rem, 4vw, 3rem);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    h1 { margin: 0; font-size: clamp(1.3rem, 2.4vw, 2rem); letter-spacing: 0.04em; }
+    .sub { color: var(--muted); font-size: 0.92rem; margin-top: 0.25rem; }
+    .meter { min-width: 220px; }
+    .meter label { display: block; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; }
+    .bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.35rem; }
+    .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--ember), var(--eros), var(--psyche)); transition: width 0.8s ease; }
+    main { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr) minmax(300px, 1fr); gap: 1rem; padding: 1rem clamp(1rem, 4vw, 3rem) 3rem; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 1rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .portrait { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 18px; border: 1px solid var(--line); background: #17101f; }
+    .name { font-size: 1.4rem; margin: 0.8rem 0 0.2rem; }
+    .voice { color: var(--muted); font-style: italic; min-height: 3.2em; }
+    .prompt { color: #d9c9e8; font-size: 0.82rem; line-height: 1.45; background: rgba(0,0,0,0.22); border-radius: 14px; padding: 0.8rem; }
+    #transcript { display: flex; flex-direction: column; gap: 0.75rem; max-height: 72vh; overflow: auto; padding-right: 0.25rem; }
+    .line { border-radius: 18px; padding: 0.85rem 1rem; line-height: 1.45; border: 1px solid var(--line); }
+    .line.eros { background: linear-gradient(135deg, rgba(255,107,129,0.18), rgba(255,179,107,0.08)); }
+    .line.psyche { background: linear-gradient(135deg, rgba(155,123,255,0.18), rgba(255,107,129,0.08)); }
+    .line.ember { background: rgba(255, 179, 107, 0.12); border-color: rgba(255,179,107,0.25); }
+    .speaker { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.35rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.72rem 1rem;
+      color: #180b14;
+      background: linear-gradient(135deg, #ffd29a, #ff8fab 55%, #b79cff);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(255, 143, 171, 0.22);
+    }
+    button.secondary { background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+    button:disabled { opacity: 0.55; cursor: wait; }
+    .status { color: var(--muted); font-size: 0.85rem; margin-top: 0.7rem; min-height: 1.2em; }
+    h2 { font-size: 1rem; margin: 0 0 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #d8c8ea; }
+    canvas { width: 100%; height: 320px; border-radius: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    th { color: var(--muted); font-weight: 600; }
+    .bench { white-space: pre-wrap; color: #eadcff; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.7rem; max-height: 260px; overflow: auto; }
+    .legend { display: flex; gap: 1rem; color: var(--muted); font-size: 0.82rem; margin: 0.5rem 0 0.8rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; }
+    @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #transcript { max-height: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Ember Love</h1>
+      <div class="sub">Bonsai-1.7B Q1_0 · Eros + Psyche · Ember reviews outputs and forges token-embedding weights</div>
+    </div>
+    <div class="meter">
+      <label>Mutual affection</label>
+      <div class="bar"><div id="loveBar"></div></div>
+      <div class="sub" id="loveText">0%</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <img class="portrait" src="/images/eros.png" alt="Eros" />
+      <h2 class="name" style="color: var(--eros)">Eros</h2>
+      <div class="voice" id="erosVoice">loading…</div>
+      <div class="prompt" id="erosPrompt"></div>
+    </section>
+
+    <section class="card">
+      <div id="transcript"></div>
+      <div class="controls">
+        <button id="talkBtn">Talk</button>
+        <button id="reviewBtn" class="secondary">Ember review</button>
+        <button id="forgeBtn" class="secondary">Forge weights</button>
+        <button id="benchBtn" class="secondary">Benchmarks</button>
+        <button id="analysisBtn" class="secondary">Refresh analysis</button>
+      </div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Psyche</h2>
+      <img class="portrait" src="/images/psyche.png" alt="Psyche" />
+      <h2 class="name" style="color: var(--psyche); margin-top: 0.8rem">Psyche</h2>
+      <div class="voice" id="psycheVoice">loading…</div>
+      <div class="prompt" id="psychePrompt"></div>
+      <h2 style="margin-top:1.2rem">Weight-space analysis</h2>
+      <div class="legend">
+        <span><span class="dot" style="background:#999"></span>base</span>
+        <span><span class="dot" style="background:var(--eros)"></span>eros</span>
+        <span><span class="dot" style="background:var(--psyche)"></span>psyche</span>
+      </div>
+      <canvas id="space" width="640" height="320"></canvas>
+      <h2 style="margin-top:1rem">Largest embedding deltas</h2>
+      <table id="deltaTable"><thead><tr><th>token</th><th>eros</th><th>psyche</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">Ember note</h2>
+      <div class="bench" id="emberNote">—</div>
+      <h2 style="margin-top:1rem">Latest benchmarks</h2>
+      <div class="bench" id="benchOut">—</div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let busy = false;
+
+    function setStatus(msg) { $("status").textContent = msg || ""; }
+    function setBusy(v, msg) {
+      busy = v;
+      document.querySelectorAll("button").forEach(b => b.disabled = v);
+      if (msg) setStatus(msg);
+    }
+    function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+    function renderTranscript(entries) {
+      $("transcript").innerHTML = entries.map(e => {
+        if (e.kind !== "line") return "";
+        const speaker = e.speaker === "eros" ? "Eros" : "Psyche";
+        return `<div class="line ${e.speaker}"><div class="speaker">${speaker}</div><div>${esc(e.content)}</div></div>`;
+      }).join("") || `<div class="line ember"><div class="speaker">Ember</div><div>Press Talk to start the conversation.</div></div>`;
+      $("transcript").scrollTop = $("transcript").scrollHeight;
+    }
+    function renderLove(score) {
+      const pct = Math.round(Math.max(0, Math.min(1, score || 0)) * 100);
+      $("loveBar").style.width = pct + "%";
+      $("loveText").textContent = pct + "%";
+    }
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {headers: {"Content-Type": "application/json"}, ...opts});
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function loadState() {
+      const state = await api("/api/state");
+      $("erosVoice").textContent = state.personas?.eros?.voice || "";
+      $("psycheVoice").textContent = state.personas?.psyche?.voice || "";
+      $("erosPrompt").textContent = state.personas?.eros?.system_prompt || "";
+      $("psychePrompt").textContent = state.personas?.psyche?.system_prompt || "";
+      renderTranscript(state.transcript || []);
+      renderLove(state.love_score || 0);
+      if (state.last_ember_review?.note) $("emberNote").textContent = state.last_ember_review.note;
+      if (state.plan_version) setStatus("plan " + state.plan_version);
+    }
+    function drawSpace(points) {
+      const canvas = $("space"), ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const xs = points.map(p => p.base[0]).concat(points.map(p => p.eros[0]), points.map(p => p.psyche[0]));
+      const ys = points.map(p => p.base[1]).concat(points.map(p => p.eros[1]), points.map(p => p.psyche[1]));
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const pad = 34;
+      const sx = x => pad + (x - minX) / ((maxX - minX) || 1) * (canvas.width - pad * 2);
+      const sy = y => canvas.height - pad - (y - minY) / ((maxY - minY) || 1) * (canvas.height - pad * 2);
+      function dot(p, color, r) {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(sx(p[0]), sy(p[1]), r, 0, Math.PI * 2); ctx.fill();
+      }
+      for (const p of points) {
+        dot(p.base, "rgba(255,255,255,0.28)", 2.2);
+        dot(p.eros, "#ff6b81", 3.4);
+        dot(p.psyche, "#9b7bff", 3.4);
+      }
+      const top = points.slice(0, 12);
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = "#f7eef8";
+      for (const p of top) {
+        const x = sx(p.eros[0]), y = sy(p.eros[1]);
+        ctx.fillText(p.token || p.word || String(p.token_id), Math.min(x + 5, canvas.width - 70), Math.max(y - 5, 12));
+      }
+    }
+    async function loadAnalysis() {
+      setBusy(true, "Computing weight-space analysis…");
+      try {
+        const a = await api("/api/analysis");
+        drawSpace(a.points || []);
+        const rows = (a.points || []).slice(0, 16).map(p => `<tr><td>${esc(p.token)}</td><td>${p.delta_eros.toFixed(3)}</td><td>${p.delta_psyche.toFixed(3)}</td></tr>`).join("");
+        $("deltaTable").querySelector("tbody").innerHTML = rows;
+        renderLove(a.love_score || 0);
+        if (a.last_ember_review?.note) $("emberNote").textContent = a.last_ember_review.note;
+        const hist = a.benchmarks || [];
+        const last = hist[hist.length - 1];
+        $("benchOut").textContent = last ? JSON.stringify(last.results, null, 2) : "Run benchmarks after forging.";
+        setStatus("analysis ready · " + (a.points || []).length + " token rows projected");
+      } catch (e) { setStatus("analysis failed: " + e.message); }
+      finally { setBusy(false); }
+    }
+    async function act(path, label) {
+      if (busy) return;
+      setBusy(true, label + "… this can take a few minutes on CPU.");
+      try {
+        const data = await api(path, {method: "POST"});
+        if (data.transcript) renderTranscript(data.transcript);
+        if (data.added) renderTranscript([...(await api("/api/state")).transcript || []]);
+        if (typeof data.love_score === "number") renderLove(data.love_score);
+        if (data.review?.note) $("emberNote").textContent = data.review.note;
+        if (data.results) $("benchOut").textContent = JSON.stringify(data.results, null, 2);
+        setStatus(label + " complete");
+        loadState();
+      } catch (e) { setStatus(label + " failed: " + e.message); }
+      finally { setBusy(false); }
+    }
+    $("talkBtn").onclick = () => act("/api/tryst", "Talk");
+    $("reviewBtn").onclick = () => act("/api/ember/review", "Ember review");
+    $("forgeBtn").onclick = () => act("/api/ember/forge", "Forge weights");
+    $("benchBtn").onclick = () => act("/api/benchmarks", "Benchmarks");
+    $("analysisBtn").onclick = loadAnalysis;
+    loadState().then(loadAnalysis).catch(e => setStatus("load failed: " + e.message));
+  </script>
+</body>
+</html>

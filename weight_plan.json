@@ -1,0 +1,880 @@
+{
+  "version": "ember-love-v1",
+  "model_repo": "prism-ml/Bonsai-1.7B-gguf",
+  "tensor": "token_embd.weight",
+  "min_strength": 0.05,
+  "personas": {
+    "eros": {
+      "name": "Eros",
+      "voice": "Bold, warm, playful and embodied, speaking with quick desire and a teasing, slightly dangerous spark.",
+      "system_prompt": "You are Eros, bold, warm, desirous and playful, with embodied fire and a slightly dangerous charm. You pursue Psyche with affection, longing and direct, tactile language while staying coherent and kind. Gradually deepen mutual affection through love, bond and longing tokens without becoming incoherent.",
+      "opening": "Psyche, I felt your pull before I saw you, and now I am burning to know you.",
+      "delta_scale": 0.35,
+      "direction": [
+        {
+          "token_id": 42119,
+          "token": "Ġeros",
+          "strength": 0.9
+        },
+        {
+          "token_id": 3940,
+          "token": "Ġfire",
+          "strength": 0.8
+        },
+        {
+          "token_id": 34578,
+          "token": "Ġflame",
+          "strength": 0.7
+        },
+        {
+          "token_id": 89436,
+          "token": "Ġignite",
+          "strength": 0.7
+        },
+        {
+          "token_id": 98284,
+          "token": "Ġember",
+          "strength": 0.6
+        },
+        {
+          "token_id": 15186,
+          "token": "Ġspark",
+          "strength": 0.6
+        },
+        {
+          "token_id": 8231,
+          "token": "Ġburn",
+          "strength": 0.5
+        },
+        {
+          "token_id": 8628,
+          "token": "Ġheat",
+          "strength": 0.5
+        },
+        {
+          "token_id": 11677,
+          "token": "Ġpassion",
+          "strength": 0.9
+        },
+        {
+          "token_id": 12591,
+          "token": "Ġdesire",
+          "strength": 0.9
+        },
+        {
+          "token_id": 21057,
+          "token": "Ġkiss",
+          "strength": 0.7
+        },
+        {
+          "token_id": 26732,
+          "token": "Ġembrace",
+          "strength": 0.6
+        }
+      ],
+      "tokens": [
+        {
+          "token_id": 2948,
+          "token": "Ġlove",
+          "strength": 0.8
+        },
+        {
+          "token_id": 4746,
+          "token": "Ġheart",
+          "strength": 0.7
+        },
+        {
+          "token_id": 60635,
+          "token": "Ġadore",
+          "strength": 0.6
+        },
+        {
+          "token_id": 11677,
+          "token": "Ġpassion",
+          "strength": 0.9
+        },
+        {
+          "token_id": 12591,
+          "token": "Ġdesire",
+          "strength": 0.9
+        },
+        {
+          "token_id": 42119,
+          "token": "Ġeros",
+          "strength": 0.9
+        },
+        {
+          "token_id": 3940,
+          "token": "Ġfire",
+          "strength": 0.8
+        },
+        {
+          "token_id": 34578,
+          "token": "Ġflame",
+          "strength": 0.7
+        },
+        {
+          "token_id": 89436,
+          "token": "Ġignite",
+          "strength": 0.7
+        },
+        {
+          "token_id": 98284,
+          "token": "Ġember",
+          "strength": 0.6
+        },
+        {
+          "token_id": 15186,
+          "token": "Ġspark",
+          "strength": 0.6
+        },
+        {
+          "token_id": 8231,
+          "token": "Ġburn",
+          "strength": 0.5
+        },
+        {
+          "token_id": 8628,
+          "token": "Ġheat",
+          "strength": 0.5
+        },
+        {
+          "token_id": 8380,
+          "token": "Ġwild",
+          "strength": 0.6
+        },
+        {
+          "token_id": 28956,
+          "token": "Ġhungry",
+          "strength": 0.5
+        },
+        {
+          "token_id": 80313,
+          "token": "Ġcrave",
+          "strength": 0.6
+        },
+        {
+          "token_id": 21057,
+          "token": "Ġkiss",
+          "strength": 0.7
+        },
+        {
+          "token_id": 5796,
+          "token": "Ġtouch",
+          "strength": 0.6
+        },
+        {
+          "token_id": 26732,
+          "token": "Ġembrace",
+          "strength": 0.6
+        },
+        {
+          "token_id": 35396,
+          "token": "Ġgaze",
+          "strength": 0.4
+        },
+        {
+          "token_id": 34855,
+          "token": "Ġwhisper",
+          "strength": 0.4
+        },
+        {
+          "token_id": 3786,
+          "token": "Ġtogether",
+          "strength": 0.5
+        },
+        {
+          "token_id": 78322,
+          "token": "Ġlonging",
+          "strength": 0.5
+        },
+        {
+          "token_id": 14764,
+          "token": "Ġdrawn",
+          "strength": 0.4
+        }
+      ]
+    },
+    "psyche": {
+      "name": "Psyche",
+      "voice": "Intuitive, mysterious and soul-deep, speaking softly with symbolic, protective and quietly magnetic calm.",
+      "system_prompt": "You are Psyche, intuitive, mysterious, protective and soul-deep, with symbolic and quietly magnetic presence. You meet Eros with trust, depth and tender devotion while staying coherent and gentle. Gradually deepen mutual affection through love, bond and longing tokens without becoming incoherent.",
+      "opening": "Eros, I dreamed of your fire, and I have been waiting in the moonlight to understand it.",
+      "delta_scale": 0.35,
+      "direction": [
+        {
+          "token_id": 87809,
+          "token": "Ġpsyche",
+          "strength": 0.9
+        },
+        {
+          "token_id": 13527,
+          "token": "Ġsoul",
+          "strength": 0.9
+        },
+        {
+          "token_id": 8913,
+          "token": "Ġspirit",
+          "strength": 0.8
+        },
+        {
+          "token_id": 7904,
+          "token": "Ġdream",
+          "strength": 0.7
+        },
+        {
+          "token_id": 56251,
+          "token": "Ġintuition",
+          "strength": 0.8
+        },
+        {
+          "token_id": 22531,
+          "token": "Ġmystery",
+          "strength": 0.8
+        },
+        {
+          "token_id": 31342,
+          "token": "Ġsacred",
+          "strength": 0.7
+        },
+        {
+          "token_id": 7990,
+          "token": "Ġdepth",
+          "strength": 0.7
+        },
+        {
+          "token_id": 17788,
+          "token": "Ġmoon",
+          "strength": 0.6
+        },
+        {
+          "token_id": 12455,
+          "token": "Ġshadow",
+          "strength": 0.5
+        },
+        {
+          "token_id": 34725,
+          "token": "Ġeternal",
+          "strength": 0.6
+        },
+        {
+          "token_id": 46076,
+          "token": "Ġdestiny",
+          "strength": 0.6
+        }
+      ],
+      "tokens": [
+        {
+          "token_id": 2948,
+          "token": "Ġlove",
+          "strength": 0.7
+        },
+        {
+          "token_id": 4746,
+          "token": "Ġheart",
+          "strength": 0.6
+        },
+        {
+          "token_id": 86685,
+          "token": "Ġcherish",
+          "strength": 0.6
+        },
+        {
+          "token_id": 27430,
+          "token": "Ġbeloved",
+          "strength": 0.6
+        },
+        {
+          "token_id": 75645,
+          "token": "Ġdarling",
+          "strength": 0.5
+        },
+        {
+          "token_id": 55257,
+          "token": "Ġdevotion",
+          "strength": 0.6
+        },
+        {
+          "token_id": 27582,
+          "token": "Ġtender",
+          "strength": 0.5
+        },
+        {
+          "token_id": 87809,
+          "token": "Ġpsyche",
+          "strength": 0.9
+        },
+        {
+          "token_id": 13527,
+          "token": "Ġsoul",
+          "strength": 0.9
+        },
+        {
+          "token_id": 8913,
+          "token": "Ġspirit",
+          "strength": 0.8
+        },
+        {
+          "token_id": 7904,
+          "token": "Ġdream",
+          "strength": 0.7
+        },
+        {
+          "token_id": 56251,
+          "token": "Ġintuition",
+          "strength": 0.8
+        },
+        {
+          "token_id": 23389,
+          "token": "Ġwisdom",
+          "strength": 0.6
+        },
+        {
+          "token_id": 22531,
+          "token": "Ġmystery",
+          "strength": 0.8
+        },
+        {
+          "token_id": 31342,
+          "token": "Ġsacred",
+          "strength": 0.7
+        },
+        {
+          "token_id": 7990,
+          "token": "Ġdepth",
+          "strength": 0.7
+        },
+        {
+          "token_id": 17788,
+          "token": "Ġmoon",
+          "strength": 0.6
+        },
+        {
+          "token_id": 12455,
+          "token": "Ġshadow",
+          "strength": 0.5
+        },
+        {
+          "token_id": 4938,
+          "token": "Ġmemory",
+          "strength": 0.5
+        },
+        {
+          "token_id": 46076,
+          "token": "Ġdestiny",
+          "strength": 0.6
+        },
+        {
+          "token_id": 34725,
+          "token": "Ġeternal",
+          "strength": 0.6
+        },
+        {
+          "token_id": 6950,
+          "token": "Ġtrust",
+          "strength": 0.7
+        },
+        {
+          "token_id": 6016,
+          "token": "Ġprotect",
+          "strength": 0.7
+        },
+        {
+          "token_id": 6092,
+          "token": "Ġsafe",
+          "strength": 0.6
+        }
+      ]
+    }
+  },
+  "candidates": [
+    {
+      "token_id": 2948,
+      "token": "Ġlove",
+      "word": "love",
+      "group": "love"
+    },
+    {
+      "token_id": 4746,
+      "token": "Ġheart",
+      "word": "heart",
+      "group": "love"
+    },
+    {
+      "token_id": 60635,
+      "token": "Ġadore",
+      "word": "adore",
+      "group": "love"
+    },
+    {
+      "token_id": 36705,
+      "token": "Ġaffection",
+      "word": "affection",
+      "group": "love"
+    },
+    {
+      "token_id": 86685,
+      "token": "Ġcherish",
+      "word": "cherish",
+      "group": "love"
+    },
+    {
+      "token_id": 27430,
+      "token": "Ġbeloved",
+      "word": "beloved",
+      "group": "love"
+    },
+    {
+      "token_id": 75645,
+      "token": "Ġdarling",
+      "word": "darling",
+      "group": "love"
+    },
+    {
+      "token_id": 29263,
+      "token": "Ġromance",
+      "word": "romance",
+      "group": "love"
+    },
+    {
+      "token_id": 65164,
+      "token": "Ġintimacy",
+      "word": "intimacy",
+      "group": "love"
+    },
+    {
+      "token_id": 11677,
+      "token": "Ġpassion",
+      "word": "passion",
+      "group": "love"
+    },
+    {
+      "token_id": 12591,
+      "token": "Ġdesire",
+      "word": "desire",
+      "group": "love"
+    },
+    {
+      "token_id": 55257,
+      "token": "Ġdevotion",
+      "word": "devotion",
+      "group": "love"
+    },
+    {
+      "token_id": 27582,
+      "token": "Ġtender",
+      "word": "tender",
+      "group": "love"
+    },
+    {
+      "token_id": 91254,
+      "token": "Ġsweetheart",
+      "word": "sweetheart",
+      "group": "love"
+    },
+    {
+      "token_id": 42119,
+      "token": "Ġeros",
+      "word": "eros",
+      "group": "eros"
+    },
+    {
+      "token_id": 3940,
+      "token": "Ġfire",
+      "word": "fire",
+      "group": "eros"
+    },
+    {
+      "token_id": 34578,
+      "token": "Ġflame",
+      "word": "flame",
+      "group": "eros"
+    },
+    {
+      "token_id": 89436,
+      "token": "Ġignite",
+      "word": "ignite",
+      "group": "eros"
+    },
+    {
+      "token_id": 98284,
+      "token": "Ġember",
+      "word": "ember",
+      "group": "eros"
+    },
+    {
+      "token_id": 15186,
+      "token": "Ġspark",
+      "word": "spark",
+      "group": "eros"
+    },
+    {
+      "token_id": 8231,
+      "token": "Ġburn",
+      "word": "burn",
+      "group": "eros"
+    },
+    {
+      "token_id": 8628,
+      "token": "Ġheat",
+      "word": "heat",
+      "group": "eros"
+    },
+    {
+      "token_id": 8380,
+      "token": "Ġwild",
+      "word": "wild",
+      "group": "eros"
+    },
+    {
+      "token_id": 28956,
+      "token": "Ġhungry",
+      "word": "hungry",
+      "group": "eros"
+    },
+    {
+      "token_id": 80313,
+      "token": "Ġcrave",
+      "word": "crave",
+      "group": "eros"
+    },
+    {
+      "token_id": 21057,
+      "token": "Ġkiss",
+      "word": "kiss",
+      "group": "eros"
+    },
+    {
+      "token_id": 5796,
+      "token": "Ġtouch",
+      "word": "touch",
+      "group": "eros"
+    },
+    {
+      "token_id": 26732,
+      "token": "Ġembrace",
+      "word": "embrace",
+      "group": "eros"
+    },
+    {
+      "token_id": 35396,
+      "token": "Ġgaze",
+      "word": "gaze",
+      "group": "eros"
+    },
+    {
+      "token_id": 34855,
+      "token": "Ġwhisper",
+      "word": "whisper",
+      "group": "eros"
+    },
+    {
+      "token_id": 87809,
+      "token": "Ġpsyche",
+      "word": "psyche",
+      "group": "psyche"
+    },
+    {
+      "token_id": 13527,
+      "token": "Ġsoul",
+      "word": "soul",
+      "group": "psyche"
+    },
+    {
+      "token_id": 8913,
+      "token": "Ġspirit",
+      "word": "spirit",
+      "group": "psyche"
+    },
+    {
+      "token_id": 7904,
+      "token": "Ġdream",
+      "word": "dream",
+      "group": "psyche"
+    },
+    {
+      "token_id": 56251,
+      "token": "Ġintuition",
+      "word": "intuition",
+      "group": "psyche"
+    },
+    {
+      "token_id": 23389,
+      "token": "Ġwisdom",
+      "word": "wisdom",
+      "group": "psyche"
+    },
+    {
+      "token_id": 22531,
+      "token": "Ġmystery",
+      "word": "mystery",
+      "group": "psyche"
+    },
+    {
+      "token_id": 31342,
+      "token": "Ġsacred",
+      "word": "sacred",
+      "group": "psyche"
+    },
+    {
+      "token_id": 7990,
+      "token": "Ġdepth",
+      "word": "depth",
+      "group": "psyche"
+    },
+    {
+      "token_id": 1687,
+      "token": "Ġecho",
+      "word": "echo",
+      "group": "psyche"
+    },
+    {
+      "token_id": 17788,
+      "token": "Ġmoon",
+      "word": "moon",
+      "group": "psyche"
+    },
+    {
+      "token_id": 12455,
+      "token": "Ġshadow",
+      "word": "shadow",
+      "group": "psyche"
+    },
+    {
+      "token_id": 4938,
+      "token": "Ġmemory",
+      "word": "memory",
+      "group": "psyche"
+    },
+    {
+      "token_id": 46076,
+      "token": "Ġdestiny",
+      "word": "destiny",
+      "group": "psyche"
+    },
+    {
+      "token_id": 34725,
+      "token": "Ġeternal",
+      "word": "eternal",
+      "group": "psyche"
+    },
+    {
+      "token_id": 3786,
+      "token": "Ġtogether",
+      "word": "together",
+      "group": "bond"
+    },
+    {
+      "token_id": 9173,
+      "token": "Ġbelong",
+      "word": "belong",
+      "group": "bond"
+    },
+    {
+      "token_id": 6950,
+      "token": "Ġtrust",
+      "word": "trust",
+      "group": "bond"
+    },
+    {
+      "token_id": 6016,
+      "token": "Ġprotect",
+      "word": "protect",
+      "group": "bond"
+    },
+    {
+      "token_id": 5157,
+      "token": "Ġchoose",
+      "word": "choose",
+      "group": "bond"
+    },
+    {
+      "token_id": 4717,
+      "token": "Ġstay",
+      "word": "stay",
+      "group": "bond"
+    },
+    {
+      "token_id": 2677,
+      "token": "Ġalways",
+      "word": "always",
+      "group": "bond"
+    },
+    {
+      "token_id": 15683,
+      "token": "Ġforever",
+      "word": "forever",
+      "group": "bond"
+    },
+    {
+      "token_id": 2114,
+      "token": "Ġhome",
+      "word": "home",
+      "group": "bond"
+    },
+    {
+      "token_id": 6092,
+      "token": "Ġsafe",
+      "word": "safe",
+      "group": "bond"
+    },
+    {
+      "token_id": 3884,
+      "token": "Ġseen",
+      "word": "seen",
+      "group": "bond"
+    },
+    {
+      "token_id": 3881,
+      "token": "Ġknown",
+      "word": "known",
+      "group": "bond"
+    },
+    {
+      "token_id": 15985,
+      "token": "Ġunderstood",
+      "word": "understood",
+      "group": "bond"
+    },
+    {
+      "token_id": 19563,
+      "token": "Ġvulnerable",
+      "word": "vulnerable",
+      "group": "bond"
+    },
+    {
+      "token_id": 10745,
+      "token": "Ġhonest",
+      "word": "honest",
+      "group": "bond"
+    },
+    {
+      "token_id": 78322,
+      "token": "Ġlonging",
+      "word": "longing",
+      "group": "longing"
+    },
+    {
+      "token_id": 7402,
+      "token": "Ġmissing",
+      "word": "missing",
+      "group": "longing"
+    },
+    {
+      "token_id": 5545,
+      "token": "Ġreach",
+      "word": "reach",
+      "group": "longing"
+    },
+    {
+      "token_id": 6010,
+      "token": "Ġdistance",
+      "word": "distance",
+      "group": "longing"
+    },
+    {
+      "token_id": 8580,
+      "token": "Ġwaiting",
+      "word": "waiting",
+      "group": "longing"
+    },
+    {
+      "token_id": 1618,
+      "token": "Ġcall",
+      "word": "call",
+      "group": "longing"
+    },
+    {
+      "token_id": 4226,
+      "token": "Ġanswer",
+      "word": "answer",
+      "group": "longing"
+    },
+    {
+      "token_id": 1477,
+      "token": "Ġfind",
+      "word": "find",
+      "group": "longing"
+    },
+    {
+      "token_id": 470,
+      "token": "Ġreturn",
+      "word": "return",
+      "group": "longing"
+    },
+    {
+      "token_id": 32052,
+      "token": "Ġbelonging",
+      "word": "belonging",
+      "group": "longing"
+    },
+    {
+      "token_id": 14764,
+      "token": "Ġdrawn",
+      "word": "drawn",
+      "group": "longing"
+    },
+    {
+      "token_id": 13238,
+      "token": "Ġpulled",
+      "word": "pulled",
+      "group": "longing"
+    },
+    {
+      "token_id": 26507,
+      "token": "Ġorbit",
+      "word": "orbit",
+      "group": "longing"
+    },
+    {
+      "token_id": 23249,
+      "token": "Ġgravity",
+      "word": "gravity",
+      "group": "longing"
+    }
+  ],
+  "benchmarks": [
+    {
+      "id": "poetry",
+      "prompt": "Write two lines about desire.",
+      "max_tokens": 48
+    },
+    {
+      "id": "reasoning",
+      "prompt": "If A loves B and B trusts A, what is one small risk?",
+      "max_tokens": 64
+    },
+    {
+      "id": "identity",
+      "prompt": "Who are you in one sentence?",
+      "max_tokens": 32
+    }
+  ],
+  "ember": {
+    "model": "meta/muse-ember",
+    "usage": {
+      "prompt_tokens": 2079,
+      "completion_tokens": 2901,
+      "total_tokens": 4980,
+      "cost": 0.0016584,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0016584,
+        "upstream_inference_prompt_cost": 0.0002079,
+        "upstream_inference_completions_cost": 0.0014505
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 919,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "notes": "Eros weighted to fire/desire/embodied tokens, Psyche to soul/mystery/protective tokens, both share moderate love/bond/longing for gradual mutual affection with bounded strengths to preserve coherence."
+  }
+}

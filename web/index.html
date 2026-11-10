@@ -4,95 +4,133 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ember Love — two tiny minds, changing weights</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
   <style>
     :root {
-      --bg: #0b0710;
-      --panel: rgba(255, 255, 255, 0.06);
-      --line: rgba(255, 255, 255, 0.12);
-      --text: #f7eef8;
-      --muted: #b9a8c4;
+      --bg: #07080d;
+      --panel: #0b0d15;
+      --panel2: rgba(255,255,255,0.035);
+      --line: rgba(255,255,255,0.10);
+      --text: #eef2ff;
+      --muted: #9aa3b8;
       --eros: #ff6b81;
       --psyche: #9b7bff;
       --ember: #ffb36b;
+      --cyan: #67e8f9;
+      --emerald: #34d399;
     }
     * { box-sizing: border-box; }
+    html { color-scheme: dark; }
     body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 20% 10%, rgba(255, 107, 129, 0.22), transparent 32rem),
-        radial-gradient(circle at 80% 20%, rgba(155, 123, 255, 0.24), transparent 34rem),
-        linear-gradient(135deg, #120a1c, #070510 55%, #160a14);
+        radial-gradient(circle at 18% 8%, rgba(255,107,129,0.20), transparent 30rem),
+        radial-gradient(circle at 82% 18%, rgba(155,123,255,0.22), transparent 34rem),
+        radial-gradient(circle at 55% 90%, rgba(255,179,107,0.12), transparent 30rem),
+        linear-gradient(135deg, #0d0a18, var(--bg) 55%, #120a14);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 1.25rem clamp(1rem, 4vw, 3rem);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 5;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.1rem clamp(1rem, 4vw, 3rem); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 20; background: rgba(7,8,13,0.72); backdrop-filter: blur(14px);
     }
-    h1 { margin: 0; font-size: clamp(1.3rem, 2.4vw, 2rem); letter-spacing: 0.04em; }
-    .sub { color: var(--muted); font-size: 0.92rem; margin-top: 0.25rem; }
-    .meter { min-width: 220px; }
-    .meter label { display: block; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; }
-    .bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.35rem; }
+    h1 { margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); letter-spacing: 0.05em; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; max-width: 70ch; }
+    .meter { min-width: 210px; }
+    .meter label { display: block; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; }
+    .bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.35rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
     .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--ember), var(--eros), var(--psyche)); transition: width 0.8s ease; }
-    main { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr) minmax(300px, 1fr); gap: 1rem; padding: 1rem clamp(1rem, 4vw, 3rem) 3rem; }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 1rem;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    .stage {
+      display: grid; grid-template-columns: minmax(280px, 0.95fr) minmax(430px, 1.35fr) minmax(280px, 0.95fr);
+      gap: 1rem; padding: 1rem clamp(1rem, 4vw, 3rem);
     }
-    .portrait { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 18px; border: 1px solid var(--line); background: #17101f; }
-    .name { font-size: 1.4rem; margin: 0.8rem 0 0.2rem; }
-    .voice { color: var(--muted); font-style: italic; min-height: 3.2em; }
-    .prompt { color: #d9c9e8; font-size: 0.82rem; line-height: 1.45; background: rgba(0,0,0,0.22); border-radius: 14px; padding: 0.8rem; }
-    #transcript { display: flex; flex-direction: column; gap: 0.75rem; max-height: 72vh; overflow: auto; padding-right: 0.25rem; }
+    .card {
+      position: relative; border-radius: 24px; padding: 1rem; overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025));
+      border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0,0,0,0.32);
+      backdrop-filter: blur(10px);
+    }
+    .card::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.55;
+      background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.08), transparent 70%);
+      transition: opacity 0.25s ease;
+    }
+    .card:hover::before { opacity: 1; }
+    .art { width: 100%; height: auto; display: block; border-radius: 18px; border: 1px solid var(--line); background: #0b0d15; }
+    .art-wrap { position: relative; }
+    .art-tag {
+      position: absolute; left: 0.8rem; top: 0.8rem; padding: 0.28rem 0.65rem; border-radius: 999px;
+      background: rgba(5,6,10,0.62); border: 1px solid rgba(255,255,255,0.14); color: #dbe4ff;
+      font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; backdrop-filter: blur(8px);
+    }
+    .name { font-size: 1.35rem; margin: 0.85rem 0 0.15rem; }
+    .voice { color: var(--muted); font-style: italic; min-height: 3em; font-size: 0.92rem; }
+    .prompt { color: #cfd8ff; font-size: 0.8rem; line-height: 1.45; background: rgba(0,0,0,0.28); border-radius: 14px; padding: 0.75rem; margin-top: 0.7rem; }
+    #transcript { display: flex; flex-direction: column; gap: 0.75rem; max-height: 58vh; overflow: auto; padding-right: 0.25rem; }
     .line { border-radius: 18px; padding: 0.85rem 1rem; line-height: 1.45; border: 1px solid var(--line); }
-    .line.eros { background: linear-gradient(135deg, rgba(255,107,129,0.18), rgba(255,179,107,0.08)); }
-    .line.psyche { background: linear-gradient(135deg, rgba(155,123,255,0.18), rgba(255,107,129,0.08)); }
-    .line.ember { background: rgba(255, 179, 107, 0.12); border-color: rgba(255,179,107,0.25); }
-    .speaker { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.35rem; }
+    .line.eros { background: linear-gradient(135deg, rgba(255,107,129,0.16), rgba(255,179,107,0.07)); }
+    .line.psyche { background: linear-gradient(135deg, rgba(155,123,255,0.16), rgba(255,107,129,0.07)); }
+    .line.ember { background: rgba(255,179,107,0.10); border-color: rgba(255,179,107,0.22); }
+    .speaker { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 0.35rem; }
     .controls { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
     button {
-      border: 0;
-      border-radius: 999px;
-      padding: 0.72rem 1rem;
-      color: #180b14;
-      background: linear-gradient(135deg, #ffd29a, #ff8fab 55%, #b79cff);
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 10px 30px rgba(255, 143, 171, 0.22);
+      border: 0; border-radius: 999px; padding: 0.74rem 1.05rem; cursor: pointer;
+      font-family: inherit; font-weight: 650; letter-spacing: 0.01em; color: #081018;
+      background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(103,232,249,0.72) 45%, rgba(155,123,255,0.78));
+      box-shadow: 0 12px 30px rgba(103,232,249,0.16), inset 0 1px 0 rgba(255,255,255,0.55);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
     }
-    button.secondary { background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
-    button:disabled { opacity: 0.55; cursor: wait; }
-    .status { color: var(--muted); font-size: 0.85rem; margin-top: 0.7rem; min-height: 1.2em; }
-    h2 { font-size: 1rem; margin: 0 0 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #d8c8ea; }
-    canvas { width: 100%; height: 320px; border-radius: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    th { color: var(--muted); font-weight: 600; }
-    .bench { white-space: pre-wrap; color: #eadcff; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.7rem; max-height: 260px; overflow: auto; }
-    .legend { display: flex; gap: 1rem; color: var(--muted); font-size: 0.82rem; margin: 0.5rem 0 0.8rem; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; }
-    @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #transcript { max-height: none; } }
+    button:hover { transform: translateY(-1px); filter: saturate(1.12); box-shadow: 0 16px 36px rgba(155,123,255,0.22), inset 0 1px 0 rgba(255,255,255,0.6); }
+    button:active { transform: translateY(0); }
+    button.secondary {
+      color: var(--text); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 26px rgba(0,0,0,0.22);
+    }
+    button.ghost { color: var(--muted); background: transparent; border: 1px solid rgba(255,255,255,0.10); box-shadow: none; }
+    button:disabled { opacity: 0.55; cursor: wait; transform: none; }
+    .status { color: var(--muted); font-size: 0.86rem; margin-top: 0.7rem; min-height: 1.25em; }
+    .dashboard { padding: 0 clamp(1rem, 4vw, 3rem) 2.2rem; }
+    .dash-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 0.4rem 0 1rem; }
+    .dash-head h2 { margin: 0; font-size: 1.15rem; letter-spacing: 0.06em; text-transform: uppercase; color: #dbe4ff; }
+    .dash-head p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.88rem; }
+    .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+    .bento .card { grid-column: span 12; }
+    .bento .wide2 { grid-column: span 7; }
+    .bento .wide3 { grid-column: span 5; }
+    .bento .third { grid-column: span 4; }
+    .plot { width: 100%; height: 430px; border-radius: 16px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.07); }
+    .plot.small { height: 360px; }
+    .sigil { width: 100%; height: 210px; display: block; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: #0b0d15; }
+    .events { display: flex; flex-direction: column; gap: 0.55rem; max-height: 330px; overflow: auto; }
+    .event {
+      display: grid; grid-template-columns: 74px 1fr; gap: 0.6rem; align-items: start;
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); border-radius: 14px; padding: 0.65rem 0.75rem;
+    }
+    .event .who { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+    .event.eros .who { color: var(--eros); }
+    .event.psyche .who { color: var(--psyche); }
+    .event .tok { font-weight: 700; color: #fff; }
+    .event .meta { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+    .bench { white-space: pre-wrap; color: #e9e2ff; background: rgba(0,0,0,0.24); border-radius: 14px; padding: 0.8rem; max-height: 330px; overflow: auto; font-size: 0.82rem; line-height: 1.45; }
+    .muted-note { color: var(--muted); font-size: 0.84rem; }
+    .legend { display: flex; gap: 1rem; color: var(--muted); font-size: 0.8rem; margin: 0.4rem 0 0.8rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; box-shadow: 0 0 10px currentColor; }
+    @media (max-width: 1180px) {
+      .stage { grid-template-columns: 1fr; }
+      .bento .wide2, .bento .wide3, .bento .third { grid-column: span 12; }
+      #transcript { max-height: none; }
+    }
   </style>
 </head>
 <body>
   <header>
     <div>
       <h1>Ember Love</h1>
-      <div class="sub">Bonsai-1.7B Q1_0 · Eros + Psyche · Ember reviews outputs and forges token-embedding weights</div>
+      <div class="sub">Bonsai-1.7B Q1_0 · Eros, god of love · Psyche, mortal soul · Ember reviews the first message, modifies token-embedding weights, then watches 10 messages.</div>
     </div>
     <div class="meter">
       <label>Mutual affection</label>
@@ -101,9 +139,12 @@
     </div>
   </header>
 
-  <main>
+  <main class="stage">
     <section class="card">
-      <img class="portrait" src="/images/eros.png" alt="Eros" />
+      <div class="art-wrap">
+        <canvas class="art" id="erosArt" width="440" height="440"></canvas>
+        <div class="art-tag">Electric Gaze</div>
+      </div>
       <h2 class="name" style="color: var(--eros)">Eros</h2>
       <div class="voice" id="erosVoice">loading…</div>
       <div class="prompt" id="erosPrompt"></div>
@@ -112,37 +153,66 @@
     <section class="card">
       <div id="transcript"></div>
       <div class="controls">
-        <button id="talkBtn">Talk</button>
-        <button id="reviewBtn" class="secondary">Ember review</button>
-        <button id="forgeBtn" class="secondary">Forge weights</button>
-        <button id="benchBtn" class="secondary">Benchmarks</button>
-        <button id="analysisBtn" class="secondary">Refresh analysis</button>
+        <button id="runBtn">Run 10 messages</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+        <button id="analysisBtn" class="ghost">Refresh analysis</button>
       </div>
       <div class="status" id="status"></div>
     </section>
 
     <section class="card">
-      <h2>Psyche</h2>
-      <img class="portrait" src="/images/psyche.png" alt="Psyche" />
-      <h2 class="name" style="color: var(--psyche); margin-top: 0.8rem">Psyche</h2>
+      <div class="art-wrap">
+        <canvas class="art" id="psycheArt" width="440" height="440"></canvas>
+        <div class="art-tag">Ink Garden</div>
+      </div>
+      <h2 class="name" style="color: var(--psyche); margin-top: 0.85rem">Psyche</h2>
       <div class="voice" id="psycheVoice">loading…</div>
       <div class="prompt" id="psychePrompt"></div>
-      <h2 style="margin-top:1.2rem">Weight-space analysis</h2>
-      <div class="legend">
-        <span><span class="dot" style="background:#999"></span>base</span>
-        <span><span class="dot" style="background:var(--eros)"></span>eros</span>
-        <span><span class="dot" style="background:var(--psyche)"></span>psyche</span>
-      </div>
-      <canvas id="space" width="640" height="320"></canvas>
-      <h2 style="margin-top:1rem">Largest embedding deltas</h2>
-      <table id="deltaTable"><thead><tr><th>token</th><th>eros</th><th>psyche</th></tr></thead><tbody></tbody></table>
-      <h2 style="margin-top:1rem">Ember note</h2>
-      <div class="bench" id="emberNote">—</div>
-      <h2 style="margin-top:1rem">Latest benchmarks</h2>
-      <div class="bench" id="benchOut">—</div>
     </section>
   </main>
 
+  <section class="dashboard">
+    <div class="dash-head">
+      <div>
+        <h2>Interpretability dashboard</h2>
+        <p>Real GGUF <code>token_embd.weight</code> rows changed by Ember, projected into weight space and benchmark behavior.</p>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:#8b93a7;color:#8b93a7"></span>base</span>
+        <span><span class="dot" style="background:var(--eros);color:var(--eros)"></span>eros</span>
+        <span><span class="dot" style="background:var(--psyche);color:var(--psyche)"></span>psyche</span>
+      </div>
+    </div>
+    <div class="bento">
+      <div class="card wide2">
+        <h2>Weight matrix</h2>
+        <div class="muted-note" id="matrixNote">Rows are candidate token embedding rows; columns are 32-dim block averages of signed deltas from base to modified GGUF.</div>
+        <div id="matrixPlot" class="plot"></div>
+      </div>
+      <div class="card wide3">
+        <h2>PCA weight space</h2>
+        <div class="muted-note">Candidate token rows projected onto the top two principal components across base + modified models.</div>
+        <div id="spacePlot" class="plot small"></div>
+      </div>
+      <div class="card third">
+        <h2>Weight events</h2>
+        <div class="muted-note">What Ember changed and how large the embedding move was.</div>
+        <div class="events" id="events"></div>
+      </div>
+      <div class="card third">
+        <h2>Benchmarks</h2>
+        <div class="muted-note">Neutral probes before/after modification, run automatically after the tryst.</div>
+        <div class="bench" id="benchOut">Run the 10-message tryst to generate benchmark outputs.</div>
+      </div>
+      <div class="card third">
+        <h2>Ember sigil</h2>
+        <div class="muted-note">Vignette Bloom renderer over a classical flame study.</div>
+        <canvas class="sigil" id="emberArt" width="720" height="210"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <script src="/ascii.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     let busy = false;
@@ -159,7 +229,7 @@
         if (e.kind !== "line") return "";
         const speaker = e.speaker === "eros" ? "Eros" : "Psyche";
         return `<div class="line ${e.speaker}"><div class="speaker">${speaker}</div><div>${esc(e.content)}</div></div>`;
-      }).join("") || `<div class="line ember"><div class="speaker">Ember</div><div>Press Talk to start the conversation.</div></div>`;
+      }).join("") || `<div class="line ember"><div class="speaker">Ember</div><div>Press “Run 10 messages” — after the first message Ember will modify weights.</div></div>`;
       $("transcript").scrollTop = $("transcript").scrollHeight;
     }
     function renderLove(score) {
@@ -172,6 +242,71 @@
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
+    function fmtNum(x, d = 3) { return (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(d); }
+    function renderEvents(events) {
+      const list = events || [];
+      $("events").innerHTML = list.slice().reverse().map(e => `
+        <div class="event ${e.persona}">
+          <div class="who">${esc(e.persona || "?")}</div>
+          <div>
+            <div class="tok">${esc(e.token || e.token_id)}</div>
+            <div class="meta">strength ${fmtNum(e.delta_applied, 3)} · cosine ${fmtNum(e.cosine_before_after, 4)} · ΔL2 ${fmtNum(e.l2_delta, 4)}</div>
+          </div>
+        </div>`).join("") || `<div class="muted-note">No Ember weight events yet. The first run modifies weights after message 1.</div>`;
+    }
+    function renderBenchmarks(history) {
+      const hist = history || [];
+      const last = hist[hist.length - 1];
+      if (!last) { $("benchOut").textContent = "Run the 10-message tryst to generate benchmark outputs."; return; }
+      const parts = Object.entries(last.results || {}).map(([id, r]) => {
+        return `# ${id}\nprompt: ${r.prompt || ""}\nEros: ${String(r.eros || "").slice(0, 420)}\nPsyche: ${String(r.psyche || "").slice(0, 420)}`;
+      });
+      $("benchOut").textContent = parts.join("\n\n") || "No benchmark results yet.";
+    }
+    function renderMatrix(wm) {
+      const plot = $("matrixPlot");
+      if (!window.Plotly) { plot.innerHTML = `<div class="muted-note" style="padding:2rem">Plotly failed to load; weight matrix unavailable.</div>`; return; }
+      if (!wm || !wm.eros || !wm.psyche) { Plotly.purge(plot); plot.innerHTML = `<div class="muted-note" style="padding:2rem">Run analysis after modification to see the weight matrix.</div>`; return; }
+      const tokens = wm.tokens || [];
+      const erosRows = wm.eros || [], psycheRows = wm.psyche || [];
+      const z = [];
+      const y = [];
+      tokens.forEach((tok, i) => { z.push(erosRows[i] || []); y.push("Eros " + tok); });
+      tokens.forEach((tok, i) => { z.push(psycheRows[i] || []); y.push("Psyche " + tok); });
+      const flat = z.flat().filter(v => Number.isFinite(v));
+      const maxAbs = Math.max(1e-6, ...flat.map(Math.abs));
+      const x = Array.from({ length: wm.cols || 64 }, (_, i) => i + 1);
+      Plotly.react(plot, [{
+        type: "heatmap", z, x, y,
+        colorscale: "RdBu", reversescale: true, zmin: -maxAbs, zmax: maxAbs,
+        colorbar: { title: { text: "Δ embedding", font: { color: "#cfd8ff" } }, tickfont: { color: "#9aa3b8" } },
+        hovertemplate: "%{y}<br>block %{x}<br>delta %{z:.4f}<extra></extra>"
+      }], {
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: "#eef2ff", size: 10 },
+        margin: { l: 128, r: 24, t: 18, b: 44 }, height: 430,
+        xaxis: { title: { text: "embedding block (32 dims)", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
+        yaxis: { title: { text: "token row", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.04)", autorange: "reversed" }
+      }, { responsive: true, displaylogo: false });
+      $("matrixNote").textContent = `tensor ${wm.tensor || "token_embd.weight"} · dim ${wm.dim || 2048} · ${tokens.length} candidate rows per persona · ${wm.cols || 64} block columns`;
+    }
+    function renderSpace(points) {
+      const plot = $("spacePlot");
+      if (!window.Plotly) { plot.innerHTML = `<div class="muted-note" style="padding:2rem">Plotly failed to load; PCA unavailable.</div>`; return; }
+      const pts = points || [];
+      const base = pts.map(p => p.base), eros = pts.map(p => p.eros), psyche = pts.map(p => p.psyche);
+      const hover = pts.map(p => p.token || p.word || String(p.token_id));
+      Plotly.react(plot, [
+        { x: base.map(p => p[0]), y: base.map(p => p[1]), mode: "markers", name: "base", marker: { color: "rgba(148,163,184,0.55)", size: 5 }, text: hover, hovertemplate: "%{text}<br>base (%{x:.3f}, %{y:.3f})<extra></extra>" },
+        { x: eros.map(p => p[0]), y: eros.map(p => p[1]), mode: "markers", name: "eros", marker: { color: "#ff6b81", size: 7 }, text: hover, hovertemplate: "%{text}<br>eros (%{x:.3f}, %{y:.3f})<extra></extra>" },
+        { x: psyche.map(p => p[0]), y: psyche.map(p => p[1]), mode: "markers", name: "psyche", marker: { color: "#9b7bff", size: 7 }, text: hover, hovertemplate: "%{text}<br>psyche (%{x:.3f}, %{y:.3f})<extra></extra>" }
+      ], {
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: "#eef2ff", size: 10 },
+        margin: { l: 42, r: 18, t: 18, b: 42 }, height: 360, showlegend: true,
+        legend: { orientation: "h", y: -0.18, font: { color: "#9aa3b8" } },
+        xaxis: { title: { text: "PC1", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" },
+        yaxis: { title: { text: "PC2", font: { color: "#9aa3b8" } }, tickfont: { color: "#9aa3b8" }, gridcolor: "rgba(255,255,255,0.05)" }
+      }, { responsive: true, displaylogo: false });
+    }
     async function loadState() {
       const state = await api("/api/state");
       $("erosVoice").textContent = state.personas?.eros?.voice || "";
@@ -180,72 +315,75 @@
       $("psychePrompt").textContent = state.personas?.psyche?.system_prompt || "";
       renderTranscript(state.transcript || []);
       renderLove(state.love_score || 0);
-      if (state.last_ember_review?.note) $("emberNote").textContent = state.last_ember_review.note;
+      if (state.last_ember_review?.note) $("status").textContent = state.last_ember_review.note;
       if (state.plan_version) setStatus("plan " + state.plan_version);
-    }
-    function drawSpace(points) {
-      const canvas = $("space"), ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const xs = points.map(p => p.base[0]).concat(points.map(p => p.eros[0]), points.map(p => p.psyche[0]));
-      const ys = points.map(p => p.base[1]).concat(points.map(p => p.eros[1]), points.map(p => p.psyche[1]));
-      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-      const pad = 34;
-      const sx = x => pad + (x - minX) / ((maxX - minX) || 1) * (canvas.width - pad * 2);
-      const sy = y => canvas.height - pad - (y - minY) / ((maxY - minY) || 1) * (canvas.height - pad * 2);
-      function dot(p, color, r) {
-        ctx.fillStyle = color;
-        ctx.beginPath(); ctx.arc(sx(p[0]), sy(p[1]), r, 0, Math.PI * 2); ctx.fill();
-      }
-      for (const p of points) {
-        dot(p.base, "rgba(255,255,255,0.28)", 2.2);
-        dot(p.eros, "#ff6b81", 3.4);
-        dot(p.psyche, "#9b7bff", 3.4);
-      }
-      const top = points.slice(0, 12);
-      ctx.font = "11px system-ui";
-      ctx.fillStyle = "#f7eef8";
-      for (const p of top) {
-        const x = sx(p.eros[0]), y = sy(p.eros[1]);
-        ctx.fillText(p.token || p.word || String(p.token_id), Math.min(x + 5, canvas.width - 70), Math.max(y - 5, 12));
-      }
+      renderEvents(state.weight_events || []);
+      renderBenchmarks(state.benchmark_history || []);
     }
     async function loadAnalysis() {
       setBusy(true, "Computing weight-space analysis…");
       try {
         const a = await api("/api/analysis");
-        drawSpace(a.points || []);
-        const rows = (a.points || []).slice(0, 16).map(p => `<tr><td>${esc(p.token)}</td><td>${p.delta_eros.toFixed(3)}</td><td>${p.delta_psyche.toFixed(3)}</td></tr>`).join("");
-        $("deltaTable").querySelector("tbody").innerHTML = rows;
+        renderMatrix(a.weight_matrix);
+        renderSpace(a.points || []);
+        renderEvents(a.weight_events || []);
+        renderBenchmarks(a.benchmarks || []);
         renderLove(a.love_score || 0);
-        if (a.last_ember_review?.note) $("emberNote").textContent = a.last_ember_review.note;
-        const hist = a.benchmarks || [];
-        const last = hist[hist.length - 1];
-        $("benchOut").textContent = last ? JSON.stringify(last.results, null, 2) : "Run benchmarks after forging.";
+        if (a.last_ember_review?.note) $("status").textContent = a.last_ember_review.note;
         setStatus("analysis ready · " + (a.points || []).length + " token rows projected");
       } catch (e) { setStatus("analysis failed: " + e.message); }
       finally { setBusy(false); }
     }
-    async function act(path, label) {
+    async function runStory() {
       if (busy) return;
-      setBusy(true, label + "… this can take a few minutes on CPU.");
+      setBusy(true, "Starting 10-message tryst…");
       try {
-        const data = await api(path, {method: "POST"});
-        if (data.transcript) renderTranscript(data.transcript);
-        if (data.added) renderTranscript([...(await api("/api/state")).transcript || []]);
-        if (typeof data.love_score === "number") renderLove(data.love_score);
-        if (data.review?.note) $("emberNote").textContent = data.review.note;
-        if (data.results) $("benchOut").textContent = JSON.stringify(data.results, null, 2);
-        setStatus(label + " complete");
-        loadState();
-      } catch (e) { setStatus(label + " failed: " + e.message); }
+        await api("/api/reset", {method: "POST"});
+        await loadState();
+        for (let i = 1; i <= 10; i++) {
+          setStatus(`message ${i}/10`);
+          const data = await api("/api/tryst?turns=1&max_tokens=96", {method: "POST"});
+          renderTranscript(data.transcript || []);
+          renderLove(data.love_score || 0);
+          if (i === 1) {
+            setStatus("Ember is reviewing message 1 and modifying weights…");
+            const modify = await api("/api/ember/modify", {method: "POST"});
+            renderEvents(modify.weight_events || []);
+            await loadState();
+          }
+        }
+        setStatus("Running benchmarks…");
+        await api("/api/benchmarks", {method: "POST"});
+        await loadState();
+        await loadAnalysis();
+        setStatus("tryst complete · Ember modified weights after message 1");
+      } catch (e) { setStatus("run failed: " + e.message); }
       finally { setBusy(false); }
     }
-    $("talkBtn").onclick = () => act("/api/tryst", "Talk");
-    $("reviewBtn").onclick = () => act("/api/ember/review", "Ember review");
-    $("forgeBtn").onclick = () => act("/api/ember/forge", "Forge weights");
-    $("benchBtn").onclick = () => act("/api/benchmarks", "Benchmarks");
+    async function resetStory() {
+      if (busy) return;
+      setBusy(true, "Resetting…");
+      try { await api("/api/reset", {method: "POST"}); await loadState(); await loadAnalysis(); setStatus("reset complete"); }
+      catch (e) { setStatus("reset failed: " + e.message); }
+      finally { setBusy(false); }
+    }
+    $("runBtn").onclick = runStory;
+    $("resetBtn").onclick = resetStory;
     $("analysisBtn").onclick = loadAnalysis;
-    loadState().then(loadAnalysis).catch(e => setStatus("load failed: " + e.message));
+
+    document.querySelectorAll(".card").forEach(card => {
+      card.addEventListener("pointermove", e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", (e.clientX - r.left) + "px");
+        card.style.setProperty("--my", (e.clientY - r.top) + "px");
+      });
+    });
+
+    const erosArt = window.EmberAscii.create($("erosArt"), { preset: "electric", image: "/images/eros.png", theme: { bg: "#160a12", accent: "#ffb36b" } });
+    const psycheArt = window.EmberAscii.create($("psycheArt"), { preset: "ink", image: "/images/psyche.png", theme: { bg: "#0b0718", accent: "#9b7bff" } });
+    const emberArt = window.EmberAscii.create($("emberArt"), { preset: "vignette", image: "/images/ember.png", theme: { bg: "#120a14", accent: "#ffd29a" } });
+
+    loadState().catch(e => setStatus("load failed: " + e.message));
   </script>
 </body>
 </html>

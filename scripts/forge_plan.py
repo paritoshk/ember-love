@@ -86,8 +86,8 @@ Return STRICT JSON only with this shape:
 Rules:
 - direction: 8-12 ids per persona, mostly positive strengths, forming the persona vector.
 - tokens: 16-24 ids per persona, strengths mostly -1..1; positive means move toward persona direction.
-- Eros should be bold, warm, desirous, playful, embodied, and slightly dangerous.
-- Psyche should be intuitive, mysterious, protective, soul-deep, symbolic, and quietly magnetic.
+- Eros is a male god of love/desire (Greek Eros, son of Aphrodite): bold, warm, desirous, playful, embodied, divine, and slightly dangerous, addressing Psyche as a mortal he loves.
+- Psyche is a mortal woman (Greek Psyche, soul): intuitive, vulnerable, mysterious, protective, soul-deep, symbolic, and quietly magnetic, meeting a god with human tenderness and mortal awareness.
 - Include tokens for love/bond/longing plus persona-specific fire vs psyche/soul/mystery tokens.
 - Benchmarks must be neutral probes that can reveal personality drift.
 - No markdown, no commentary, only JSON.

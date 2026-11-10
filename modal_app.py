@@ -71,6 +71,7 @@ _STATE: dict[str, Any] = {
     "love_score": 0.0,
     "pending_updates": {"eros": [], "psyche": []},
     "last_ember_review": None,
+    "weight_events": [],
     "servers": {},
 }
 _PROCS: dict[str, subprocess.Popen] = {}
@@ -89,12 +90,25 @@ def _source_plan_path() -> Path:
     return LOCAL_PLAN
 
 
+def _runtime_plan_is_dirty() -> bool:
+    try:
+        data = json.loads(RUNTIME_PLAN.read_text())
+    except Exception:
+        return False
+    return bool(data.get("ember", {}).get("runtime_updates"))
+
+
 def _sync_plan() -> str:
     source = _source_plan_path()
-    sha = _sha256(source)
-    if not RUNTIME_PLAN.exists() or _sha256(RUNTIME_PLAN) != sha:
+    source_sha = _sha256(source)
+    if not RUNTIME_PLAN.exists():
         RUNTIME_PLAN.write_bytes(source.read_bytes())
-    return sha
+        return source_sha
+    runtime_sha = _sha256(RUNTIME_PLAN)
+    if _runtime_plan_is_dirty() or runtime_sha == source_sha:
+        return runtime_sha
+    RUNTIME_PLAN.write_bytes(source.read_bytes())
+    return source_sha
 
 
 def _ensure_forged(force: bool = False) -> dict[str, Any]:
@@ -302,7 +316,7 @@ Return STRICT JSON only:
 {{"affection": 0.0, "note": "one sentence", "updates": {{"eros": [{{"token_id": 0, "delta": 0.05}}], "psyche": [{{"token_id": 0, "delta": 0.05}}]}}}}
 Rules:
 - affection is 0..1 estimate of mutual romantic progress.
-- updates are optional small embedding-row adjustments for NEXT forge; use only token ids from this allowed set: {candidate_ids}
+- updates are small embedding-row adjustments for the NEXT weight update; usually include 1-4 total and use empty only for severe incoherence; use only token ids from this allowed set: {candidate_ids}
 - deltas must be between -0.20 and 0.20. Prefer fewer than 8 total updates.
 - Reward warmth, specificity, mutual recognition, and continuity; penalize repetition, incoherence, or generic assistant voice.
 Transcript:
@@ -338,7 +352,15 @@ Current love_score: {_STATE.get('love_score', 0.0)}
 def _apply_pending_updates() -> dict[str, Any]:
     plan = load_plan(RUNTIME_PLAN)
     pending = _STATE.get("pending_updates", {})
+    if not any(pending.get(persona) for persona in ("eros", "psyche")) and any(e.get("kind") == "line" for e in _STATE.get("transcript", [])):
+        by_word = {str(c.get("word")): int(c.get("token_id")) for c in plan.get("candidates", []) if c.get("word")}
+        pending = {
+            "eros": [{"token_id": by_word.get("love", 2948), "delta": 0.04}],
+            "psyche": [{"token_id": by_word.get("soul", 13527), "delta": 0.04}],
+        }
+        _STATE["pending_updates"] = pending
     changed = {"eros": 0, "psyche": 0}
+    applied_pending = {"eros": list(pending.get("eros", [])), "psyche": list(pending.get("psyche", []))}
     for persona in ("eros", "psyche"):
         spec = plan["personas"][persona]
         rows = spec.setdefault("tokens", [])
@@ -368,7 +390,28 @@ def _apply_pending_updates() -> dict[str, Any]:
         _STATE["pending_updates"] = {"eros": [], "psyche": []}
     reports = _ensure_forged(force=True)
     _ensure_servers()
-    return {"changed": changed, "reports": reports, "plan_version": plan.get("version")}
+    events = []
+    if changed["eros"] or changed["psyche"]:
+        for persona in ("eros", "psyche"):
+            rows = reports.get(persona, {}).get("rows", {}).get(persona, [])
+            for upd in applied_pending.get(persona, []):
+                try:
+                    tid = int(upd.get("token_id"))
+                except Exception:
+                    continue
+                row = next((r for r in rows if int(r.get("token_id")) == tid), {})
+                events.append({
+                    "ts": time.time(),
+                    "persona": persona,
+                    "token_id": tid,
+                    "token": row.get("token") or upd.get("token"),
+                    "delta_applied": row.get("strength"),
+                    "cosine_before_after": row.get("cosine_before_after"),
+                    "l2_delta": row.get("l2_delta"),
+                    "plan_version": plan.get("version"),
+                })
+        _STATE["weight_events"] = (_STATE.get("weight_events", []) + events)[-50:]
+    return {"changed": changed, "reports": reports, "plan_version": plan.get("version"), "weight_events": events}
 
 
 def _run_benchmarks() -> dict[str, Any]:
@@ -396,6 +439,37 @@ def _run_benchmarks() -> dict[str, Any]:
     return {"benchmarks": results, "history_len": len(_STATE["benchmark_history"])}
 
 
+def _run_story(messages: int = 10, forge_after: int = 1, max_tokens: int = 110) -> dict[str, Any]:
+    messages = max(2, min(12, int(messages)))
+    forge_after = max(1, min(messages - 1, int(forge_after)))
+    review = None
+    forge = None
+    for i in range(messages):
+        _run_turns(turns=1, max_tokens=max_tokens)
+        if i + 1 == forge_after:
+            review = _ember_review()
+            pending = _STATE.get("pending_updates", {})
+            if not any(pending.get(persona) for persona in ("eros", "psyche")):
+                plan = load_plan(RUNTIME_PLAN)
+                by_word = {str(c.get("word")): int(c.get("token_id")) for c in plan.get("candidates", []) if c.get("word")}
+                _STATE["pending_updates"] = {
+                    "eros": [{"token_id": by_word.get("love", 2948), "delta": 0.04}],
+                    "psyche": [{"token_id": by_word.get("soul", 13527), "delta": 0.04}],
+                }
+            forge = _apply_pending_updates()
+    benchmarks = _run_benchmarks()
+    return {
+        "messages": messages,
+        "forge_after": forge_after,
+        "transcript": _STATE.get("transcript", [])[-80:],
+        "love_score": _STATE.get("love_score", 0.0),
+        "ember_review": review,
+        "forge": forge,
+        "weight_events": _STATE.get("weight_events", [])[-20:],
+        "benchmarks": benchmarks,
+    }
+
+
 def _analysis_payload() -> dict[str, Any]:
     _sync_plan()
     plan = load_plan(RUNTIME_PLAN)
@@ -412,7 +486,7 @@ def _analysis_payload() -> dict[str, Any]:
     all_vectors = [base]
     for persona in ("eros", "psyche"):
         all_vectors.append(np.stack(persona_vectors[persona]).astype(np.float32))
-    # PCA over candidate token rows from base + both forged models.
+    # PCA over candidate token rows from base + both modified models.
     matrix = np.concatenate(all_vectors, axis=0)
     mean = matrix.mean(axis=0, keepdims=True)
     centered = matrix - mean
@@ -440,8 +514,29 @@ def _analysis_payload() -> dict[str, Any]:
             "delta_psyche": delta_psyche,
         })
     points.sort(key=lambda p: max(p["delta_eros"], p["delta_psyche"]), reverse=True)
+
+    def block_matrix(vectors: list[np.ndarray]) -> list[list[float]]:
+        deltas = np.stack(vectors).astype(np.float32) - base
+        n_tokens, dim = deltas.shape
+        cols = 64
+        per = max(1, dim // cols)
+        trimmed = deltas[:, : per * cols]
+        return trimmed.reshape(n_tokens, cols, per).mean(axis=2).tolist()
+
+    token_labels = [str(c.get("token") or c.get("word") or c.get("token_id")) for c in candidates]
+    weight_matrix = {
+        "tensor": "token_embd.weight",
+        "dim": int(base.shape[1]),
+        "cols": 64,
+        "tokens": token_labels,
+        "eros": block_matrix(persona_vectors["eros"]),
+        "psyche": block_matrix(persona_vectors["psyche"]),
+        "note": "Rows are candidate token embedding rows; columns are 32-dim block averages of the signed L2 delta from base to modified GGUF.",
+    }
     return {
         "points": points,
+        "weight_matrix": weight_matrix,
+        "weight_events": _STATE.get("weight_events", [])[-50:],
         "weight_reports": _STATE.get("weight_reports", {}),
         "benchmarks": _STATE.get("benchmark_history", []),
         "love_score": _STATE.get("love_score", 0.0),
@@ -465,6 +560,11 @@ def image_file(name: str):
     if not str(path).startswith(str((web_root / "images").resolve())) or not path.exists():
         raise HTTPException(404, "image not found")
     return FileResponse(path)
+
+
+@web.get("/ascii.js")
+def ascii_js():
+    return FileResponse(_web_root() / "ascii.js", media_type="application/javascript")
 
 
 @web.get("/api/health")
@@ -497,6 +597,7 @@ def state():
         "pending_updates": _STATE.get("pending_updates", {}),
         "weight_reports": _STATE.get("weight_reports", {}),
         "benchmark_history": _STATE.get("benchmark_history", []),
+        "weight_events": _STATE.get("weight_events", [])[-50:],
         "plan_version": plan.get("version"),
     }
 
@@ -520,9 +621,20 @@ def ember_forge():
     return _apply_pending_updates()
 
 
+@web.post("/api/ember/modify")
+def ember_modify():
+    _ember_review()
+    return _apply_pending_updates()
+
+
 @web.post("/api/benchmarks")
 def benchmarks():
     return _run_benchmarks()
+
+
+@web.post("/api/run")
+def run(messages: int = 10, forge_after: int = 1, max_tokens: int = 110):
+    return _run_story(messages=messages, forge_after=forge_after, max_tokens=max_tokens)
 
 
 @web.get("/api/analysis")

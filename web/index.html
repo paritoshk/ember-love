@@ -216,6 +216,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
     let busy = false;
+    let analysisBusy = false;
 
     function setStatus(msg) { $("status").textContent = msg || ""; }
     function setBusy(v, msg) {
@@ -237,10 +238,14 @@
       $("loveBar").style.width = pct + "%";
       $("loveText").textContent = pct + "%";
     }
-    async function api(path, opts = {}) {
-      const res = await fetch(path, {headers: {"Content-Type": "application/json"}, ...opts});
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+    async function api(path, opts = {}, timeoutMs = 240000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(path, {headers: {"Content-Type": "application/json"}, ...opts, signal: controller.signal});
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      } finally { clearTimeout(timer); }
     }
     function fmtNum(x, d = 3) { return (x === null || x === undefined || Number.isNaN(x)) ? "—" : Number(x).toFixed(d); }
     function renderEvents(events) {
@@ -321,7 +326,9 @@
       renderBenchmarks(state.benchmark_history || []);
     }
     async function loadAnalysis() {
-      setBusy(true, "Computing weight-space analysis…");
+      if (analysisBusy) return;
+      analysisBusy = true;
+      setStatus("Computing weight-space analysis…");
       try {
         const a = await api("/api/analysis");
         renderMatrix(a.weight_matrix);
@@ -332,7 +339,7 @@
         if (a.last_ember_review?.note) $("status").textContent = a.last_ember_review.note;
         setStatus("analysis ready · " + (a.points || []).length + " token rows projected");
       } catch (e) { setStatus("analysis failed: " + e.message); }
-      finally { setBusy(false); }
+      finally { analysisBusy = false; }
     }
     async function runStory() {
       if (busy) return;
@@ -353,9 +360,10 @@
           }
         }
         setStatus("Running benchmarks…");
-        await api("/api/benchmarks", {method: "POST"});
-        await loadState();
-        await loadAnalysis();
+        api("/api/benchmarks", {method: "POST"})
+          .then(() => loadState())
+          .then(() => loadAnalysis())
+          .catch(e => setStatus("benchmark refresh failed: " + e.message));
         setStatus("tryst complete · Ember modified weights after message 1");
       } catch (e) { setStatus("run failed: " + e.message); }
       finally { setBusy(false); }
@@ -363,7 +371,7 @@
     async function resetStory() {
       if (busy) return;
       setBusy(true, "Resetting…");
-      try { await api("/api/reset", {method: "POST"}); await loadState(); await loadAnalysis(); setStatus("reset complete"); }
+      try { await api("/api/reset", {method: "POST"}); await loadState(); loadAnalysis(); setStatus("reset complete"); }
       catch (e) { setStatus("reset failed: " + e.message); }
       finally { setBusy(false); }
     }
